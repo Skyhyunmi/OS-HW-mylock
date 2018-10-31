@@ -1,8 +1,10 @@
 #ifndef __LOCKS_H__
 #define __LOCKS_H__
 enum lock_types;
-struct lock_ops;
 
+/*************************************************
+ * Spinlock
+ */
 struct spinlock {
 	/* Fill this in */
 };
@@ -11,6 +13,9 @@ void acquire_spinlock(struct spinlock *);
 void release_spinlock(struct spinlock *);
 
 
+/*************************************************
+ * Mutex
+ */
 struct mutex {
 	/* Fill this in */
 };
@@ -19,6 +24,9 @@ void acquire_mutex(struct mutex *);
 void release_mutex(struct mutex *);
 
 
+/*************************************************
+ * Semaphore
+ */
 struct semaphore {
 	/* Fill this in */
 };
@@ -26,4 +34,9 @@ void init_semaphore(struct semaphore *, const int);
 void acquire_semaphore(struct semaphore *);
 void release_semaphore(struct semaphore *);
 
+/*************************************************
+ * Lock tester.
+ * Will be invoked if the program is run with -T
+ */
+void test_lock(void);
 #endif

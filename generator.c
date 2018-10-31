@@ -25,10 +25,10 @@ int generator_fn_random(int tid)
 	return MIN_VALUE + (random() % (MAX_VALUE - MIN_VALUE));
 }
 
-int generator_fn_sleep(int tid)
+int generator_fn_delayed(int tid)
 {
-	usleep(1000);
-	return 43;
+	usleep(100);
+	return generator_fn_random(tid);
 }
 
 struct generator {
@@ -47,12 +47,11 @@ int (*assign_generator_fn(enum generator_types type, int tid))(int)
 	case generator_constant:
 		return &generator_fn_constant;
 	case generator_random:
-	case generator_test1:
 		return &generator_fn_random;
-	case generator_test0:
-		return &generator_fn_sleep;
-	case generator_test2:
-		if (tid < 8) return &generator_fn_constant;
+	case generator_delayed:
+		return &generator_fn_delayed;
+	case generator_mixed:
+		if (tid < 4) return &generator_fn_constant;
 		return &generator_fn_random;
 	default:
 		return &generator_fn_constant;
@@ -75,6 +74,7 @@ void *generator_main(void *_args_)
 		assert(my->generator_fn);
 		value = my->generator_fn(my->tid);
 		//printf("  %d generates %d\n", my->tid, value);
+
 		enqueue_ringbuffer((int)value);
 		my->generated[value]++;
 
@@ -91,6 +91,7 @@ void *generator_main(void *_args_)
 	my->fp = fopen(filename, "w");
 	assert(my->fp);
 	for (value = MIN_VALUE; value < MAX_VALUE; value++) {
+		if (!my->generated[value]) continue;
 		fprintf(my->fp, "%d %lu\n", value, my->generated[value]);
 	}
 	fclose(my->fp);

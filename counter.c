@@ -11,15 +11,15 @@ static pthread_t counter_thread;
 static unsigned long occurrances[MAX_VALUE] = { 0 };
 
 static int __initialized = 0;
-static int delay = 0;
+static int delayed = 0;
 
 void *counter_main(void *);
 
 int spawn_counter(const enum counter_types type, const unsigned long _nr_requests_)
 {
 	nr_requests = _nr_requests_;
-	if (type != counter_normal) {
-		delay = 1;
+	if (type == counter_delayed) {
+		delayed = 1;
 	}
 	pthread_create(&counter_thread, NULL, counter_main, NULL);
 	__initialized = 1;
@@ -57,7 +57,6 @@ static void dump_counting_result(void)
 	if (verbose) {
 		printf("  Total : %d\n", nr);
 	}
-	fprintf(fp,"%d\n", nr);
 
 	if (fp) {
 		fclose(fp);
@@ -83,7 +82,7 @@ void *counter_main(void *_args_)
 		}
 		// printf("Dequeue %d\n", value);
 		occurrances[value]++;
-		if (delay) usleep(100);
+		if (delayed) usleep(100);
 	}
 
 	if (verbose) {

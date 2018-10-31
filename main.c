@@ -2,11 +2,13 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <pthread.h>
 
 #include "config.h"
 #include "ringbuffer.h"
 #include "generator.h"
 #include "counter.h"
+#include "locks.h"
 
 static enum generator_types generator_type = generator_constant;
 static int nr_generators = DEFAULT_NR_GENERATORS;
@@ -22,43 +24,27 @@ int verbose = 1;
 int parse_command(int argc, char *argv[])
 {
 	char opt;
-	while ((opt = getopt(argc, argv, "qt:s:n:R:SM012h?")) != -1) {
+	while ((opt = getopt(argc, argv, "vqg:s:n:R:rSM01234h?T")) != -1) {
 		switch(opt) {
+		case 'v':
+			verbose = 1;
 		case 'q':
 			verbose = 0;
 			break;
-		case '0':
-			generator_type = generator_random;
-			nr_generators = 8;
-			nr_generate = (1 << 24);
-			counter_type = counter_normal;
-			lock_type = lock_spinlock;
-			break;
-		case '1':
-			generator_type = generator_random;
-			nr_generators = 8;
-			nr_generate = (1 >> 30);
-			counter_type = counter_normal;
-			lock_type = lock_mutex;
-			break;
-		case '2':
-			generator_type = generator_random;
-			nr_generators = 8;
-			nr_generate = (1 >> 30);
-			counter_type = counter_normal;
-			lock_type = lock_semaphore;
-			break;
+		case 'T':
+			test_lock();
+			exit(0);
 		case 'R':
 			srandom(atoi(optarg));
 			break;
-		case 't':
+		case 'r':
+			generator_type = generator_random;
+			break;
+		case 'g':
 			nr_generators = atoi(optarg);
 			break;
 		case 'n':
 			nr_generate = atoll(optarg);
-			break;
-		case 's':
-			nr_slots = atoi(optarg);
 			break;
 		case 'S':
 			lock_type = lock_semaphore;
@@ -66,14 +52,54 @@ int parse_command(int argc, char *argv[])
 		case 'M':
 			lock_type = lock_mutex;
 			break;
+		case 's':
+			nr_slots = atoi(optarg);
+			break;
+		case '0':
+			generator_type = generator_random;
+			nr_generators = 8;
+			nr_generate = (1 << 23);
+			lock_type = lock_spinlock;
+			verbose = 0;
+			break;
+		case '1':
+			generator_type = generator_random;
+			nr_generators = 8;
+			nr_generate = (1 << 23);
+			lock_type = lock_mutex;
+			verbose = 0;
+			break;
+		case '2':
+			generator_type = generator_random;
+			nr_generators = 8;
+			nr_generate = (1 << 23);
+			lock_type = lock_semaphore;
+			verbose = 0;
+			break;
+		case '3':
+			generator_type = generator_random;
+			nr_generators = 8;
+			nr_generate = (1 << 10);
+			counter_type = counter_delayed;
+			verbose = 0;
+			break;
+		case '4':
+			generator_type = generator_delayed;
+			nr_generators = 8;
+			nr_generate = (1 << 10);
+			verbose = 0;
+			break;
 		case 'h':
 		case '?':
 		default:
-			fprintf(stderr, "Usage: %s [-t generators] \n", argv[0]);
+			fprintf(stderr, "Usage: %s [-g generators] \n", argv[0]);
 			fprintf(stderr, "             [-n # of request for a generator to generate]\n");
-			fprintf(stderr, "             [-s ring buffer slots]\n");
-			fprintf(stderr, "             [-M]  /* Test mutex */\n");
-			fprintf(stderr, "             [-S]  /* Test semaphore */\n");
+			fprintf(stderr, "             [-s ringbuffer slots]\n");
+			fprintf(stderr, "             [-v | -q] /* Make verbose or quiet */\n");
+			fprintf(stderr, "             [-r]      /* Use random generator */\n");
+			fprintf(stderr, "             [-M]      /* Test mutex */\n");
+			fprintf(stderr, "             [-S]      /* Test semaphore */\n");
+			fprintf(stderr, "             [-h | -?] /* Print usage */\n");
 			return -EINVAL;
 		}
 	}
@@ -83,6 +109,8 @@ int parse_command(int argc, char *argv[])
 int main(int argc, char *argv[])
 {
 	int retval = 0;
+
+	system("rm -f GEN* RESULT*");
 
 	if ((retval = parse_command(argc, argv))) {
 		goto exit;
