@@ -1,5 +1,5 @@
-#ifndef __LOCK_H__
-#define __LOCK_H__
+#ifndef __LOCKS_H__
+#define __LOCKS_H__
 enum lock_types;
 struct lock_ops;
 

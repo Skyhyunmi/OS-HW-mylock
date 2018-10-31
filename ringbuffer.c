@@ -3,7 +3,7 @@
 #include <errno.h>
 
 #include "config.h"
-#include "lock.h"
+#include "locks.h"
 
 static int nr_slots = 0;
 

@@ -10,7 +10,7 @@ all: pa3
 %.o: %.c $(HEADERS)
 	$(CC) -c $(CFLAGS) $< -o $@
 
-pa3: main.o generator.o lock.o ringbuffer.o counter.o
+pa3: main.o generator.o locks.o ringbuffer.o counter.o
 	$(CC) $(LDFLAGS) $^ -o $@
 
 .PHONY: clean

@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 #include "config.h"
-#include "lock.h"
+#include "locks.h"
 
 struct lock_ops {
 	void (*init)(struct lock *, int arg0, int arg1);
