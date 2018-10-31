@@ -10,6 +10,7 @@ enum lock_types {
 #define MIN_VALUE 0
 #define MAX_VALUE 128
 
+#define MAX_GENERATORS 256
 #define DEFAULT_NR_GENERATORS 1
 #define DEFAULT_NR_GENERATE 32
 #define DEFAULT_NR_RINGBUFFER_SLOTS 16

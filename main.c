@@ -10,16 +10,20 @@
 #include "counter.h"
 #include "locks.h"
 
+/* Common */
+int verbose = 1;
+
+/* Generator */
 static enum generator_types generator_type = generator_constant;
 static int nr_generators = DEFAULT_NR_GENERATORS;
 static unsigned long nr_generate = DEFAULT_NR_GENERATE;
 
+/* Counter */
 static enum counter_types counter_type = counter_normal;
 
+/* Ring buffer */
 static int nr_slots = DEFAULT_NR_RINGBUFFER_SLOTS;
 static enum lock_types lock_type = lock_spinlock;
-
-int verbose = 1;
 
 int parse_command(int argc, char *argv[])
 {

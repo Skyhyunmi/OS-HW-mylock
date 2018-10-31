@@ -15,6 +15,7 @@ static unsigned long nr_generate = 0;
 
 static int running = 0;
 
+/* Generator functions */
 int generator_fn_constant(int tid)
 {
 	return 43;
@@ -31,16 +32,6 @@ int generator_fn_delayed(int tid)
 	return generator_fn_random(tid);
 }
 
-struct generator {
-	pthread_t thread;
-	int tid;
-	int (*generator_fn)(int tid);
-	unsigned long generated[MAX_VALUE];
-	FILE *fp;
-};
-static struct generator *generators = NULL;
-
-
 int (*assign_generator_fn(enum generator_types type, int tid))(int)
 {
 	switch(type) {
@@ -53,11 +44,19 @@ int (*assign_generator_fn(enum generator_types type, int tid))(int)
 	case generator_mixed:
 		if (tid < 4) return &generator_fn_constant;
 		return &generator_fn_random;
-	default:
-		return &generator_fn_constant;
 	}
+
+	/* Unreachable */
+	assert(0);
 }
 
+struct generator {
+	pthread_t thread;
+	int tid;
+	int (*generator_fn)(int tid);
+	unsigned long generated[MAX_VALUE];
+};
+static struct generator *generators = NULL;
 
 void *generator_main(void *_args_)
 {
@@ -65,15 +64,14 @@ void *generator_main(void *_args_)
 	struct generator *my = (struct generator *)_args_;
 	char filename[80];
 	int value;
+	FILE *fp;
 
 	if (verbose) {
 		printf("Generator %d started...\n", my->tid);
 	}
 
 	for (i = 0; i < nr_generate && running; i++) {
-		assert(my->generator_fn);
 		value = my->generator_fn(my->tid);
-		//printf("  %d generates %d\n", my->tid, value);
 
 		enqueue_ringbuffer((int)value);
 		my->generated[value]++;
@@ -87,14 +85,16 @@ void *generator_main(void *_args_)
 		printf("Generator %d finished...\n", my->tid);
 	}
 
+	/* Log the generating summary */
 	snprintf(filename, sizeof(filename), GENERATOR_FILENAME, my->tid);
-	my->fp = fopen(filename, "w");
-	assert(my->fp);
+	fp = fopen(filename, "w");
+	assert(fp);
 	for (value = MIN_VALUE; value < MAX_VALUE; value++) {
 		if (!my->generated[value]) continue;
-		fprintf(my->fp, "%d %lu\n", value, my->generated[value]);
+		fprintf(fp, "%d %lu\n", value, my->generated[value]);
 	}
-	fclose(my->fp);
+	fclose(fp);
+
 	return 0;
 }
 
@@ -102,20 +102,14 @@ int spawn_generators(const enum generator_types type, const int _nr_generators_,
 {
 	int i;
 
-	if (_nr_generators_ <= 0 || _nr_generators_ > 256) {
-		return -EINVAL;
-	}
+	assert(_nr_generators_ > 0 && _nr_generators_ < MAX_GENERATORS);
 	nr_generators = _nr_generators_;
 
-	if (_nr_generate_ <= 0) {
-		return -EINVAL;
-	}
+	assert(_nr_generate_ > 0);
 	nr_generate = _nr_generate_;
 
 	generators = calloc(nr_generators, sizeof(*generators));
-	if (!generators) {
-		return -ENOMEM;
-	}
+	assert(generators);
 	bzero(generators, sizeof(*generators) * nr_generators);
 
 	running = 1;

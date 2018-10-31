@@ -20,21 +20,21 @@ clean:
 .PHONY: test_spinlock
 test_spinlock: clean all
 	./pa3 -0
-	@bin/count.sh GEN* > RESULT.my
+	@bin/merge_gen.sh GEN* > RESULT.my
 	diff RESULT.my RESULT.my
 	@echo "[PASS] spinlock"
 
 .PHONY: test_mutex
 test_mutex: clean all
 	./pa3 -1
-	@bin/count.sh GEN* > RESULT.my
+	@bin/merge_gen.sh GEN* > RESULT.my
 	diff RESULT.my RESULT.my
 	@echo "[PASS] mutex"
 
 .PHONY: test_sem
 test_sem: clean all
 	./pa3 -2
-	@bin/count.sh GEN* > RESULT.my
+	@bin/merge_gen.sh GEN* > RESULT.my
 	diff RESULT.my RESULT.my
 	@echo "[PASS] semaphore"
 

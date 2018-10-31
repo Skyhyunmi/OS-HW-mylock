@@ -15,19 +15,24 @@ int (*dequeue_fn)(void) = NULL;
 
 void enqueue_ringbuffer(int value)
 {
-	//printf("Enqueue %d\n", value);
 	assert(enqueue_fn);
+	assert(value >= MIN_VALUE && value < MAX_VALUE);
+
 	enqueue_fn(value);
 }
 
 int dequeue_ringbuffer(void)
 {
 	int value;
+
 	assert(dequeue_fn);
+
 	value = dequeue_fn();
-	//printf("Dequeued %d\n", value);
+	assert(value >= MIN_VALUE && value < MAX_VALUE);
+
 	return value;
 }
+
 
 /*********************************************************************
  * TODO: Implement using spinlock
@@ -47,7 +52,7 @@ void init_using_spinlock(void)
 	dequeue_fn = &dequeue_using_spinlock;
 }
 
-void fini_spinlock(void)
+void fini_using_spinlock(void)
 {
 }
 
@@ -70,7 +75,7 @@ void init_using_mutex(void)
 	dequeue_fn = &dequeue_using_mutex;
 }
 
-void fini_mutex(void)
+void fini_using_mutex(void)
 {
 }
 
@@ -93,7 +98,7 @@ void init_using_semaphore(int S)
 	dequeue_fn = &dequeue_using_semaphore;
 }
 
-void fini_semaphore(void)
+void fini_using_semaphore(void)
 {
 }
 
@@ -103,9 +108,7 @@ void fini_semaphore(void)
  */
 int init_ringbuffer(const int _nr_slots_, const enum lock_types _lock_type_)
 {
-	if (_nr_slots_ <= 0) {
-		return -EINVAL;
-	}
+	assert(_nr_slots_ > 0);
 	nr_slots = _nr_slots_;
 
 	/* Initialize lock! */
@@ -130,5 +133,6 @@ int init_ringbuffer(const int _nr_slots_, const enum lock_types _lock_type_)
 void fini_ringbuffer(void)
 {
 	/* TODO: Clean up what you allocated */
-	
+	switch (lock_type) {
+	}
 }
