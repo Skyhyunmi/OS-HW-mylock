@@ -3,7 +3,7 @@
 
 enum lock_types {
 	lock_spinlock = 0,
-	lock_blocking = 1,
+	lock_mutex = 1,
 	lock_semaphore = 2,
 };
 
@@ -13,5 +13,8 @@ enum lock_types {
 #define DEFAULT_NR_GENERATORS 1
 #define DEFAULT_NR_GENERATE 16
 #define DEFAULT_NR_RINGBUFFER_SLOTS 16
+
+#define RESULT_FILENAME "RESULT"
+#define GENERATOR_FILENAME "GEN%d"
 
 #endif

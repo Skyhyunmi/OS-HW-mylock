@@ -4,32 +4,23 @@ enum lock_types;
 struct lock_ops;
 
 struct spinlock {
-	int A;
 };
-struct blocking {
-	int B;
+void init_spinlock(struct spinlock *);
+void acquire_spinlock(struct spinlock *);
+void release_spinlock(struct spinlock *);
+
+
+struct mutex {
 };
+void init_mutex(struct mutex *);
+void acquire_mutex(struct mutex *);
+void release_mutex(struct mutex *);
+
 
 struct semaphore {
-	int C;
 };
+void init_semaphore(struct semaphore *, const int);
+void acquire_semaphore(struct semaphore *);
+void release_semaphore(struct semaphore *);
 
-struct lock {
-	enum lock_types type;
-	struct lock_ops *operations;
-	union {
-		struct spinlock spinlock;
-		struct blocking blocking;
-		struct semaphore semaphore;
-	};
-};
-
-/* Initialize the lock @lock */
-void init_lock(struct lock *lock, enum lock_types type, int arg0, int arg1);
-
-/* Acquire the lock @lock */
-void acquire_lock(struct lock *lock);
-
-/* Release the lock @lock. Should be held before calling this function */
-void release_lock(struct lock *lock);
 #endif

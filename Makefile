@@ -15,7 +15,7 @@ pa3: main.o generator.o locks.o ringbuffer.o counter.o
 
 .PHONY: clean
 clean:
-	rm -rf *.o pa3
+	rm -rf *.o pa3 GEN* RESULT
 
 .PHONY: test_busy
 test_busy:

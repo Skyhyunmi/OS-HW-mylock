@@ -8,8 +8,11 @@
 #include "generator.h"
 #include "counter.h"
 
+static enum generator_types generator_type = generator_single;
 static int nr_generators = DEFAULT_NR_GENERATORS;
 static unsigned long nr_generate = DEFAULT_NR_GENERATE;
+
+static enum counter_types counter_type = counter_test0;
 
 static int nr_slots = DEFAULT_NR_RINGBUFFER_SLOTS;
 static enum lock_types lock_type = lock_spinlock;
@@ -17,7 +20,7 @@ static enum lock_types lock_type = lock_spinlock;
 int parse_command(int argc, char *argv[])
 {
 	char opt;
-	while ((opt = getopt(argc, argv, "t:s:n:R:SB")) != -1) {
+	while ((opt = getopt(argc, argv, "t:s:n:R:SM")) != -1) {
 		switch(opt) {
 		case 'R':
 			srandom(atoi(optarg));
@@ -34,8 +37,8 @@ int parse_command(int argc, char *argv[])
 		case 'S':
 			lock_type = lock_semaphore;
 			break;
-		case 'B':
-			lock_type = lock_blocking;
+		case 'M':
+			lock_type = lock_mutex;
 			break;
 		default:
 			fprintf(stderr, "Usage: %s [-t generators] \n", argv[0]);
@@ -58,11 +61,11 @@ int main(int argc, char *argv[])
 		goto exit;
 	}
 
-	if ((retval = spawn_counter(nr_generators * nr_generate))) {
+	if ((retval = spawn_counter(counter_type, nr_generators * nr_generate))) {
 		goto exit_ring;
 	}
 
-	spawn_generators(nr_generators, nr_generate);
+	spawn_generators(generator_type, nr_generators, nr_generate);
 
 	fini_generators();
 	fini_counter();
