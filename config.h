@@ -17,4 +17,6 @@ enum lock_types {
 #define RESULT_FILENAME "RESULT"
 #define GENERATOR_FILENAME "GEN%d"
 
+extern int verbose;
+
 #endif

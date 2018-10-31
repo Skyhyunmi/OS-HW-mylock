@@ -35,6 +35,7 @@ struct generator {
 	pthread_t thread;
 	int tid;
 	int (*generator_fn)(int tid);
+	unsigned long generated[MAX_VALUE];
 	FILE *fp;
 };
 static struct generator *generators = NULL;
@@ -64,21 +65,34 @@ void *generator_main(void *_args_)
 	unsigned long i;
 	struct generator *my = (struct generator *)_args_;
 	char filename[80];
+	int value;
 
-	printf("Generator %d started...\n", my->tid);
-	snprintf(filename, sizeof(filename), GENERATOR_FILENAME, my->tid);
-	my->fp = fopen(filename, "w");
-	assert(my->fp);
+	if (verbose) {
+		printf("Generator %d started...\n", my->tid);
+	}
 
 	for (i = 0; i < nr_generate && running; i++) {
-		int value;
 		assert(my->generator_fn);
 		value = my->generator_fn(my->tid);
 		//printf("  %d generates %d\n", my->tid, value);
 		enqueue_ringbuffer((int)value);
-		fprintf(my->fp, "%d\n", value);
+		my->generated[value]++;
+
+		if (verbose && i && i % (1 << 20) == 0) {
+			printf("Generator %d generated %lu M / %lu M\n",
+					my->tid, (i >> 20), (nr_generate >> 20));
+		}
 	}
-	printf("Generator %d finished...\n", my->tid);
+	if (verbose) {
+		printf("Generator %d finished...\n", my->tid);
+	}
+
+	snprintf(filename, sizeof(filename), GENERATOR_FILENAME, my->tid);
+	my->fp = fopen(filename, "w");
+	assert(my->fp);
+	for (value = MIN_VALUE; value < MAX_VALUE; value++) {
+		fprintf(my->fp, "%d %lu\n", value, my->generated[value]);
+	}
 	fclose(my->fp);
 	return 0;
 }

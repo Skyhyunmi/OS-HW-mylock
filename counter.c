@@ -41,16 +41,22 @@ static void dump_counting_result(void)
 		fprintf(stderr, "Cannot create the result file\n");
 	}
 	
-	printf("Occurrances ------\n");
+	if (verbose) {
+		printf("Occurrances ------\n");
+	}
 	for (i = MIN_VALUE; i < MAX_VALUE; i++) {
 		if (occurrances[i] == 0) {
 			continue;
 		}
-		printf("    %3d : %lu\n", i, occurrances[i]);
+		if (verbose) {
+			printf("    %3d : %lu\n", i, occurrances[i]);
+		}		
 		fprintf(fp, "%d %d\n", i, occurrances[i]);
 		nr += occurrances[i];
 	}
-	printf("  Total : %d\n", nr);
+	if (verbose) {
+		printf("  Total : %d\n", nr);
+	}
 	fprintf(fp,"%d\n", nr);
 
 	if (fp) {
@@ -60,19 +66,29 @@ static void dump_counting_result(void)
 
 void *counter_main(void *_args_)
 {
-	unsigned int i;
-	printf("Counting %d numbers...\n", nr_requests);
+	unsigned long i;
+
+	if (verbose) {
+		printf("Counting %lu numbers...\n", nr_requests);
+	}
+
 	for (i = 0; i < nr_requests; i++) {
 		int value = dequeue_ringbuffer();
 		if (value < MIN_VALUE || value > MAX_VALUE) {
 			fprintf(stderr, "Dequeued wrong value %d\n", value);
 			break;
 		}
+		if (verbose && i && i % 1000000 == 0) {
+			printf("%lu M / %lu M counted\n", (i >> 20), (nr_requests >> 20));
+		}
 		// printf("Dequeue %d\n", value);
 		occurrances[value]++;
 		if (delay) usleep(100);
 	}
-	printf("Counting finished...\n");
+
+	if (verbose) {
+		printf("Counting finished...\n");
+	}
 	dump_counting_result();
 	return 0;
 }
