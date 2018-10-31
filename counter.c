@@ -51,7 +51,7 @@ static void dump_counting_result(void)
 		nr += occurrances[i];
 	}
 	printf("  Total : %d\n", nr);
-	fprintf(fp,"\n%d\n", nr);
+	fprintf(fp,"%d\n", nr);
 
 	if (fp) {
 		fclose(fp);
@@ -61,7 +61,7 @@ static void dump_counting_result(void)
 void *counter_main(void *_args_)
 {
 	unsigned int i;
-	printf("Counting %d started...\n", nr_requests);
+	printf("Counting %d numbers...\n", nr_requests);
 	for (i = 0; i < nr_requests; i++) {
 		int value = dequeue_ringbuffer();
 		if (value < MIN_VALUE || value > MAX_VALUE) {
@@ -70,9 +70,9 @@ void *counter_main(void *_args_)
 		}
 		// printf("Dequeue %d\n", value);
 		occurrances[value]++;
-		if (delay) sleep(1);
+		if (delay) usleep(100);
 	}
-	printf("Counter finished...\n");
+	printf("Counting finished...\n");
 	dump_counting_result();
 	return 0;
 }

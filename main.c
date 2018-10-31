@@ -8,7 +8,7 @@
 #include "generator.h"
 #include "counter.h"
 
-static enum generator_types generator_type = generator_single;
+static enum generator_types generator_type = generator_constant;
 static int nr_generators = DEFAULT_NR_GENERATORS;
 static unsigned long nr_generate = DEFAULT_NR_GENERATE;
 
@@ -20,8 +20,26 @@ static enum lock_types lock_type = lock_spinlock;
 int parse_command(int argc, char *argv[])
 {
 	char opt;
-	while ((opt = getopt(argc, argv, "t:s:n:R:SM")) != -1) {
+	while ((opt = getopt(argc, argv, "t:s:n:R:SM012")) != -1) {
 		switch(opt) {
+		case '0':
+			generator_type = generator_random;
+			nr_generators = 8;
+			nr_generate = 100;
+			lock_type = lock_spinlock;
+			break;
+		case '1':
+			generator_type = generator_random;
+			nr_generators = 8;
+			nr_generate = 100;
+			lock_type = lock_mutex;
+			break;
+		case '2':
+			generator_type = generator_random;
+			nr_generators = 8;
+			nr_generate = 100;
+			lock_type = lock_semaphore;
+			break;
 		case 'R':
 			srandom(atoi(optarg));
 			break;

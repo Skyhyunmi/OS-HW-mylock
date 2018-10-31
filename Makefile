@@ -15,15 +15,20 @@ pa3: main.o generator.o locks.o ringbuffer.o counter.o
 
 .PHONY: clean
 clean:
-	rm -rf *.o pa3 GEN* RESULT
+	rm -rf *.o pa3 GEN* RESULT*
 
-.PHONY: test_busy
-test_busy:
+.PHONY: test_spinlock
+test_spinlock:
 	make clean
 	make
+	./pa3 -0
+	bin/count.sh GEN* > RESULT.my
+	diff RESULT RESULT.my && echo "Spinlock test failed!!"
 
-.PHONY: test_blocking
-test_blocking:
+.PHONY: test_mutex
+test_mutex:
+	make clean
 
 .PHONY: test_sem
 test_sem:
+	make clean

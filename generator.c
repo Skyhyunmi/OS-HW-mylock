@@ -15,7 +15,7 @@ static unsigned long nr_generate = 0;
 
 static int running = 0;
 
-int generator_fn_single(int tid)
+int generator_fn_constant(int tid)
 {
 	return 43;
 }
@@ -27,7 +27,7 @@ int generator_fn_random(int tid)
 
 int generator_fn_sleep(int tid)
 {
-	sleep(1);
+	usleep(1000);
 	return 43;
 }
 
@@ -43,14 +43,18 @@ static struct generator *generators = NULL;
 int (*assign_generator_fn(enum generator_types type, int tid))(int)
 {
 	switch(type) {
-	case generator_single:
-		return &generator_fn_single;
+	case generator_constant:
+		return &generator_fn_constant;
 	case generator_random:
+	case generator_test1:
 		return &generator_fn_random;
 	case generator_test0:
 		return &generator_fn_sleep;
+	case generator_test2:
+		if (tid < 8) return &generator_fn_constant;
+		return &generator_fn_random;
 	default:
-		return NULL;
+		return &generator_fn_constant;
 	}
 }
 

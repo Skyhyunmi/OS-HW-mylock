@@ -41,7 +41,66 @@ int dequeue_using_spinlock(void)
 	return 0;
 }
 
+void init_using_spinlock(void)
+{
+	enqueue_fn = &enqueue_using_spinlock;
+	dequeue_fn = &dequeue_using_spinlock;
+}
 
+void fini_spinlock(void)
+{
+}
+
+
+/*********************************************************************
+ * TODO: Implement using mutex
+ */
+void enqueue_using_mutex(int value)
+{
+}
+
+int dequeue_using_mutex(void)
+{
+	return 0;
+}
+
+void init_using_mutex(void)
+{
+	enqueue_fn = &enqueue_using_mutex;
+	dequeue_fn = &dequeue_using_mutex;
+}
+
+void fini_mutex(void)
+{
+}
+
+
+/*********************************************************************
+ * TODO: Implement using semaphore
+ */
+void enqueue_using_semaphore(int value)
+{
+}
+
+int dequeue_using_semaphore(void)
+{
+	return 0;
+}
+
+void init_using_semaphore(int S)
+{
+	enqueue_fn = &enqueue_using_semaphore;
+	dequeue_fn = &dequeue_using_semaphore;
+}
+
+void fini_semaphore(void)
+{
+}
+
+
+/*********************************************************************
+ * Common implementation
+ */
 int init_ringbuffer(const int _nr_slots_, const enum lock_types _lock_type_)
 {
 	if (_nr_slots_ <= 0) {
@@ -49,19 +108,21 @@ int init_ringbuffer(const int _nr_slots_, const enum lock_types _lock_type_)
 	}
 	nr_slots = _nr_slots_;
 
+	/* Initialize lock! */
 	lock_type = _lock_type_;
-
-	/* TODO: Initialize your ringbuffer and synchronization mechanism */
 	switch (lock_type) {
 	case lock_spinlock:
-		enqueue_fn = &enqueue_using_spinlock;
-		dequeue_fn = &dequeue_using_spinlock;
+		init_using_spinlock();
 		break;
 	case lock_mutex:
+		init_using_mutex();
 		break;
 	case lock_semaphore:
+		init_using_semaphore(10);
 		break;
 	}
+
+	/* TODO: Initialize your ringbuffer and synchronization mechanism */
 
 	return 0;
 }
@@ -69,12 +130,5 @@ int init_ringbuffer(const int _nr_slots_, const enum lock_types _lock_type_)
 void fini_ringbuffer(void)
 {
 	/* TODO: Clean up what you allocated */
-	switch (lock_type) {
-	case lock_spinlock:
-		break;
-	case lock_mutex:
-		break;
-	case lock_semaphore:
-		break;
-	}
+	
 }
