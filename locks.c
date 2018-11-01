@@ -58,12 +58,12 @@ void init_semaphore(struct semaphore *sem, int S)
 	return;
 }
 
-void acquire_semaphore(struct semaphore *sem)
+void wait_semaphore(struct semaphore *sem)
 {
 	return;
 }
 
-void release_semaphore(struct semaphore *sem)
+void signal_semaphore(struct semaphore *sem)
 {
 	return;
 }

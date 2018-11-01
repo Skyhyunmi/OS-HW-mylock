@@ -31,8 +31,8 @@ struct semaphore {
 	/* Fill this in */
 };
 void init_semaphore(struct semaphore *, const int);
-void acquire_semaphore(struct semaphore *);
-void release_semaphore(struct semaphore *);
+void wait_semaphore(struct semaphore *);
+void signal_semaphore(struct semaphore *);
 
 /*************************************************
  * Lock tester.
