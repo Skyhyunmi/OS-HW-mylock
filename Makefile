@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-g
-LDFLAGS=-lpthread
+LDFLAGS=-pthread
 
 HEADERS=$(wildcard ./*.h)
 
