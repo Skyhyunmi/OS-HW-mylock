@@ -6,7 +6,7 @@ enum lock_types;
  * Spinlock
  */
 struct spinlock {
-	/* Fill this in */
+	int locked;
 };
 void init_spinlock(struct spinlock *);
 void acquire_spinlock(struct spinlock *);
@@ -18,6 +18,7 @@ void release_spinlock(struct spinlock *);
  */
 struct mutex {
 	/* Fill this in */
+	int available;
 };
 void init_mutex(struct mutex *);
 void acquire_mutex(struct mutex *);

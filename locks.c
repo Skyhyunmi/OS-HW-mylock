@@ -3,7 +3,8 @@
 #include <assert.h>
 #include <unistd.h>
 #include <pthread.h>
-
+//#include <linux/list.h>
+#include "list.h"
 #include "config.h"
 #include "locks.h"
 #include "atomic.h"
@@ -13,17 +14,20 @@
  */
 void init_spinlock(struct spinlock *lock)
 {
-	return;
+    lock->locked=0;
+    return;
 }
 
 void acquire_spinlock(struct spinlock *lock)
 {
-	return;
+    while(1==compare_and_swap(&lock->locked,0,1));
+    return;
 }
 
 void release_spinlock(struct spinlock *lock)
 {
-	return;
+    lock->locked=0;
+    return;
 }
 
 
@@ -32,18 +36,47 @@ void release_spinlock(struct spinlock *lock)
  *
  * Hint: Use pthread_self, pthread_kill, pause, and signal
  */
+
+
+struct thread_struct{
+	pthread_t process;
+	struct list_head list;
+}*t;
+
+LIST_HEAD(head);
+
 void init_mutex(struct mutex *lock)
 {
+	lock->available=1;
 	return;
 }
+
+struct spinlock listsafety;
 
 void acquire_mutex(struct mutex *lock)
 {
+	if(!lock->available){
+		init_spinlock(&testlock);
+		acquire_spinlock(&listsafety);
+			list_add(t->process,&head);
+			pause();
+		release_spinlock(&listsafety);
+	}
 	return;
 }
+/*
+struct thread_struct *ts;
+list_for_each_entry(ts,&head,list){
+	printf("%d",ts->data);
+}
 
+*/
 void release_mutex(struct mutex *lock)
 {
+	struct thread_struct *ts;
+	list_entry()
+	signal();
+	lock->available=1;
 	return;
 }
 
@@ -55,11 +88,13 @@ void release_mutex(struct mutex *lock)
  */
 void init_semaphore(struct semaphore *sem, int S)
 {
+	S=0;
 	return;
 }
 
 void wait_semaphore(struct semaphore *sem)
 {
+	
 	return;
 }
 
@@ -100,7 +135,7 @@ void test_lock(void)
 	 *  1: one main, one tester. easy :-)
 	 * 16: one main, 16 testers contending the lock :-$
 	 */
-	const int nr_testers = 1;
+	const int nr_testers = 16;
 	int i;
 	pthread_t tester[nr_testers];
 
