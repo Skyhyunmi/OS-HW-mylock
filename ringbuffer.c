@@ -12,7 +12,8 @@ static enum lock_types lock_type;
 
 void (*enqueue_fn)(int value) = NULL;
 int (*dequeue_fn)(void) = NULL;
-
+int queue[100000000];
+int cur=-1;
 void enqueue_ringbuffer(int value)
 {
 	assert(enqueue_fn);
@@ -25,9 +26,9 @@ int dequeue_ringbuffer(void)
 {
 	int value;
 
-	assert(dequeue_fn);
-
+	assert(dequeue_fn); 
 	value = dequeue_fn();
+	if(value==-1) return -1;
 	assert(value >= MIN_VALUE && value < MAX_VALUE);
 
 	return value;
@@ -37,40 +38,62 @@ int dequeue_ringbuffer(void)
 /*********************************************************************
  * TODO: Implement using spinlock
  */
+struct spinlock s,t;
 void enqueue_using_spinlock(int value)
 {
+	acquire_spinlock(&s);
+	queue[++cur] = value;
+	release_spinlock(&s);
 }
 
 int dequeue_using_spinlock(void)
 {
-	return 0;
+	int res=-1;
+	acquire_spinlock(&s);
+	if(cur==-1); 
+	else res=queue[cur--];
+	release_spinlock(&s);
+	return res;
 }
 
 void init_using_spinlock(void)
 {
+	init_spinlock(&s);
+	init_spinlock(&t);
 	enqueue_fn = &enqueue_using_spinlock;
 	dequeue_fn = &dequeue_using_spinlock;
 }
 
 void fini_using_spinlock(void)
 {
+
 }
 
 
 /*********************************************************************
  * TODO: Implement using mutex
  */
+struct mutex m;
 void enqueue_using_mutex(int value)
 {
+	acquire_mutex(&m);
+	queue[++cur] = value;
+	release_mutex(&m);
 }
 
 int dequeue_using_mutex(void)
 {
-	return 0;
+	int res=-1;
+	acquire_mutex(&m);
+	if(cur==-1); 
+	else res=queue[cur--];
+	release_mutex(&m);
+	return res;
 }
 
 void init_using_mutex(void)
 {
+	init_mutex(&m);
 	enqueue_fn = &enqueue_using_mutex;
 	dequeue_fn = &dequeue_using_mutex;
 }
@@ -134,5 +157,14 @@ void fini_ringbuffer(void)
 {
 	/* TODO: Clean up what you allocated */
 	switch (lock_type) {
+		case lock_spinlock:
+		fini_using_spinlock();
+		break;
+	case lock_mutex:
+		fini_using_mutex();
+		break;
+	case lock_semaphore:
+		fini_using_semaphore();
+		break;
 	}
 }

@@ -30,11 +30,11 @@ static void dump_counting_result(void)
 		if (verbose) {
 			printf("    %3d : %lu\n", i, occurrances[i]);
 		}		
-		fprintf(fp, "%d %d\n", i, occurrances[i]);
+		fprintf(fp, "%d %lu\n", i, occurrances[i]);
 		nr += occurrances[i];
 	}
 	if (verbose) {
-		printf("  Total : %d\n", nr);
+		printf("  Total : %lu\n", nr);
 	}
 
 	if (fp) {
@@ -52,7 +52,10 @@ void *counter_main(void *_args_)
 
 	for (i = 0; i < nr_requests; i++) {
 		int value = dequeue_ringbuffer();
-
+		if(value==-1) {
+			i--;
+			continue;
+		}
 		if (verbose && i && i % 1000000 == 0) {
 			printf("%lu M / %lu M counted\n", (i >> 20), (nr_requests >> 20));
 		}

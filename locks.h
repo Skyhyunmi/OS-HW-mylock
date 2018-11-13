@@ -19,6 +19,7 @@ void release_spinlock(struct spinlock *);
 struct mutex {
 	/* Fill this in */
 	int available;
+	struct spinlock listsafety;
 };
 void init_mutex(struct mutex *);
 void acquire_mutex(struct mutex *);
@@ -29,7 +30,8 @@ void release_mutex(struct mutex *);
  * Semaphore
  */
 struct semaphore {
-	/* Fill this in */
+	int S;
+	struct processes *list;
 };
 void init_semaphore(struct semaphore *, const int);
 void wait_semaphore(struct semaphore *);

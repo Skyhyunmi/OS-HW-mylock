@@ -3,8 +3,8 @@
 #include <assert.h>
 #include <unistd.h>
 #include <pthread.h>
-//#include <linux/list.h>
-#include "list.h"
+#include <sys/queue.h>
+#include <signal.h>
 #include "config.h"
 #include "locks.h"
 #include "atomic.h"
@@ -36,47 +36,58 @@ void release_spinlock(struct spinlock *lock)
  *
  * Hint: Use pthread_self, pthread_kill, pause, and signal
  */
-
-
-struct thread_struct{
-	pthread_t process;
-	struct list_head list;
-}*t;
-
-LIST_HEAD(head);
+LIST_HEAD(listhead,entry) head= LIST_HEAD_INITIALIZER(head);
+struct listhead *headp;
+struct entry{
+	pthread_t self;
+	LIST_ENTRY(entry) entries;
+}*t,*cur;
 
 void init_mutex(struct mutex *lock)
 {
+	printf("a\n");
 	lock->available=1;
+	init_spinlock(&(lock->listsafety));
+	LIST_INIT(&head);
 	return;
 }
-
-struct spinlock listsafety;
 
 void acquire_mutex(struct mutex *lock)
 {
+	printf("b\n");
 	if(!lock->available){
-		init_spinlock(&testlock);
-		acquire_spinlock(&listsafety);
-			list_add(t->process,&head);
-			pause();
-		release_spinlock(&listsafety);
+		t=malloc(sizeof(struct entry));
+		t->self=pthread_self();
+		acquire_spinlock(&(lock->listsafety));
+		if(LIST_EMPTY(&head)) {LIST_INSERT_HEAD(&head,t,entries); cur=t;}
+		else{
+			LIST_INSERT_AFTER(cur,t,entries);
+			cur=t;
+		}
+		printf("c\n");
+		release_spinlock(&(lock->listsafety));
+		pause();
 	}
-	return;
-}
-/*
-struct thread_struct *ts;
-list_for_each_entry(ts,&head,list){
-	printf("%d",ts->data);
+	lock->available=0;
 }
 
-*/
 void release_mutex(struct mutex *lock)
 {
-	struct thread_struct *ts;
-	list_entry()
-	signal();
+	printf("d\n");
+	struct entry *tmp = LIST_FIRST(&head);
+	printf("%d\n",tmp->self);
+	printf("e\n");
+	LIST_REMOVE(tmp,entries);
+	printf("f\n");
+	pthread_t t = tmp->self;
+	printf("g\n");
+	pthread_kill(t,SIG_UNBLOCK);
+	printf("h\n");
+	signal(0,SIG_IGN);
+	printf("i\n");
+	free(tmp);
 	lock->available=1;
+	printf("j\n");
 	return;
 }
 
@@ -88,18 +99,26 @@ void release_mutex(struct mutex *lock)
  */
 void init_semaphore(struct semaphore *sem, int S)
 {
-	S=0;
+	sem->S=S;
 	return;
 }
 
 void wait_semaphore(struct semaphore *sem)
 {
+	sem->S--;
+	if(sem->S<0){
+		pause();
+	}
 	
 	return;
 }
 
 void signal_semaphore(struct semaphore *sem)
 {
+	sem->S++;
+	if(sem->S<=0){
+		//signal(SIG_UNBLOCK,process);
+	}
 	return;
 }
 
