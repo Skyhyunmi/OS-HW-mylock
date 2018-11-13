@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <assert.h>
-
+#include <sys/queue.h>
 #include "config.h"
 #include "locks.h"
 
@@ -12,7 +12,12 @@ static enum lock_types lock_type;
 
 void (*enqueue_fn)(int value) = NULL;
 int (*dequeue_fn)(void) = NULL;
-int queue[100000000];
+TAILQ_HEAD(ringhead,entry) rhead = TAILQ_HEAD_INITIALIZER(rhead);
+struct ringhead *rheadp;
+struct entry{
+	int val;
+	TAILQ_ENTRY(entry) entries;
+} *temp;
 int cur=-1;
 void enqueue_ringbuffer(int value)
 {
@@ -42,7 +47,9 @@ struct spinlock s;
 void enqueue_using_spinlock(int value)
 {
 	acquire_spinlock(&s);
-	queue[++cur] = value;
+	temp=malloc(sizeof(struct entry));
+	temp->val=value;
+	TAILQ_INSERT_TAIL(&rhead,temp,entries);
 	release_spinlock(&s);
 }
 
@@ -50,8 +57,13 @@ int dequeue_using_spinlock(void)
 {
 	int res=-1;
 	acquire_spinlock(&s);
-	if(cur==-1); 
-	else res=queue[cur--];
+	if(TAILQ_EMPTY(&rhead)); 
+	else{
+		temp = TAILQ_FIRST(&rhead);
+		TAILQ_REMOVE(&rhead,temp,entries);
+		res=temp->val;
+		free(temp);
+	}
 	release_spinlock(&s);
 	return res;
 }
@@ -65,7 +77,13 @@ void init_using_spinlock(void)
 
 void fini_using_spinlock(void)
 {
-
+	struct entry *n1 = TAILQ_FIRST(&rhead);
+	while (n1 != NULL) {
+        struct entry *n2 = TAILQ_NEXT(n1, entries);
+        free(n1);
+        n1 = n2;
+	}
+	TAILQ_INIT(&rhead);
 }
 
 
@@ -76,7 +94,9 @@ struct mutex m;
 void enqueue_using_mutex(int value)
 {
 	acquire_mutex(&m);
-	queue[++cur] = value;
+	temp=malloc(sizeof(struct entry));
+	temp->val=value;
+	TAILQ_INSERT_TAIL(&rhead,temp,entries);
 	release_mutex(&m);
 }
 
@@ -84,8 +104,13 @@ int dequeue_using_mutex(void)
 {
 	int res=-1;
 	acquire_mutex(&m);
-	if(cur==-1); 
-	else res=queue[cur--];
+	if(TAILQ_EMPTY(&rhead));
+	else{
+		temp = TAILQ_FIRST(&rhead);
+		TAILQ_REMOVE(&rhead,temp,entries);
+		res=temp->val;
+		free(temp);
+	}
 	release_mutex(&m);
 	return res;
 }

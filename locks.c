@@ -70,10 +70,11 @@ void release_mutex(struct mutex *lock)
 {
 	if(!TAILQ_EMPTY(&head)){
 		acquire_spinlock(&lock->listsafety);
-			struct entry *tmp = TAILQ_FIRST(&head);
+		struct entry *tmp = TAILQ_FIRST(&head);
 			TAILQ_REMOVE(&head,tmp,entries);
 			printf("release %d\n",tmp->self);
 		release_spinlock(&lock->listsafety);
+		lock->locked=0;
 		pthread_kill(tmp->self,SIG_UNBLOCK);
 		//free(tmp);
 	}
