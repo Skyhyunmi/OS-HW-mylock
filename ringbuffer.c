@@ -38,7 +38,7 @@ int dequeue_ringbuffer(void)
 /*********************************************************************
  * TODO: Implement using spinlock
  */
-struct spinlock s,t;
+struct spinlock s;
 void enqueue_using_spinlock(int value)
 {
 	acquire_spinlock(&s);
@@ -59,7 +59,6 @@ int dequeue_using_spinlock(void)
 void init_using_spinlock(void)
 {
 	init_spinlock(&s);
-	init_spinlock(&t);
 	enqueue_fn = &enqueue_using_spinlock;
 	dequeue_fn = &dequeue_using_spinlock;
 }

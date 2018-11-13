@@ -18,7 +18,7 @@ void release_spinlock(struct spinlock *);
  */
 struct mutex {
 	/* Fill this in */
-	int available;
+	int locked;
 	struct spinlock listsafety;
 };
 void init_mutex(struct mutex *);

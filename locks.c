@@ -36,59 +36,49 @@ void release_spinlock(struct spinlock *lock)
  *
  * Hint: Use pthread_self, pthread_kill, pause, and signal
  */
-LIST_HEAD(listhead,entry) head= LIST_HEAD_INITIALIZER(head);
-struct listhead *headp;
+TAILQ_HEAD(tailhead,entry) head = TAILQ_HEAD_INITIALIZER(head);
+struct tailhead *headp;
 struct entry{
 	pthread_t self;
-	LIST_ENTRY(entry) entries;
-}*t,*cur;
+	TAILQ_ENTRY(entry) entries;
+}*t;
 
 void init_mutex(struct mutex *lock)
 {
-	printf("a\n");
-	lock->available=1;
-	init_spinlock(&(lock->listsafety));
-	LIST_INIT(&head);
+	lock->locked=0;
+	init_spinlock(&lock->listsafety);
+	TAILQ_INIT(&head);
 	return;
 }
 
 void acquire_mutex(struct mutex *lock)
 {
-	printf("b\n");
-	if(!lock->available){
-		t=malloc(sizeof(struct entry));
-		t->self=pthread_self();
-		acquire_spinlock(&(lock->listsafety));
-		if(LIST_EMPTY(&head)) {LIST_INSERT_HEAD(&head,t,entries); cur=t;}
-		else{
-			LIST_INSERT_AFTER(cur,t,entries);
-			cur=t;
-		}
-		printf("c\n");
-		release_spinlock(&(lock->listsafety));
+	signal(SIG_UNBLOCK,SIG_IGN);
+	if(lock->locked){
+	t=malloc(sizeof(struct entry));
+	t->self=pthread_self();
+		acquire_spinlock(&lock->listsafety);
+			TAILQ_INSERT_TAIL(&head,t,entries);
+			printf("acquire %d\n",pthread_self());
+		release_spinlock(&lock->listsafety);
 		pause();
 	}
-	lock->available=0;
+	compare_and_swap(&(lock->locked),0,1);	
 }
 
 void release_mutex(struct mutex *lock)
 {
-	printf("d\n");
-	struct entry *tmp = LIST_FIRST(&head);
-	printf("%d\n",tmp->self);
-	printf("e\n");
-	LIST_REMOVE(tmp,entries);
-	printf("f\n");
-	pthread_t t = tmp->self;
-	printf("g\n");
-	pthread_kill(t,SIG_UNBLOCK);
-	printf("h\n");
-	signal(0,SIG_IGN);
-	printf("i\n");
-	free(tmp);
-	lock->available=1;
-	printf("j\n");
-	return;
+	if(!TAILQ_EMPTY(&head)){
+		acquire_spinlock(&lock->listsafety);
+			struct entry *tmp = TAILQ_FIRST(&head);
+			TAILQ_REMOVE(&head,tmp,entries);
+			printf("release %d\n",tmp->self);
+		release_spinlock(&lock->listsafety);
+		pthread_kill(tmp->self,SIG_UNBLOCK);
+		//free(tmp);
+	}
+	lock->locked=0;
+	//return;
 }
 
 
