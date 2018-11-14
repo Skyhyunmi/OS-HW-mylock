@@ -50,23 +50,28 @@ void init_mutex(struct mutex *lock)
 {
 	lock->locked=0;
 	init_spinlock(&lock->listsafety);
-	init_spinlock(&lock->l);
 	TAILQ_INIT(&head);
 	return;
 }
-int paused=0;
+
+
+int paused=1;
+void handler(int sig){
+	paused=0;
+}
+
 void acquire_mutex(struct mutex *lock)
 {
-	signal(SIGCONT,SIG_DFL);
+	signal(SIGCONT,handler);
 	acquire_spinlock(&lock->listsafety);
 	if(lock->locked){
 		t=malloc(sizeof(struct entry));
 		t->self=pthread_self();
 		TAILQ_INSERT_TAIL(&head,t,entries);
 		release_spinlock(&lock->listsafety);
-		printf(" acquire paused : %d\n",paused);
+		//printf(" acquire paused : %d\n",paused);
 		pause();
-		printf(" acquire resumed : %d\n",paused);
+		//printf(" acquire resumed : %d\n",paused);
 	}
 	else {
 		compare_and_swap(&(lock->locked),0,1);
@@ -76,15 +81,14 @@ void acquire_mutex(struct mutex *lock)
 
 void release_mutex(struct mutex *lock)
 {
-	usleep(10000);
 	acquire_spinlock(&lock->listsafety);
 	if(!TAILQ_EMPTY(&head)){
 		struct entry *tmp = TAILQ_FIRST(&head);
 		TAILQ_REMOVE(&head,tmp,entries);
-		printf(" release paused : %d\n",paused);
-		acquire_spinlock(&lock->l);
-		pthread_kill(tmp->self,SIGCONT);
-		printf("signal?\n");
+		//printf(" release paused : %d\n",paused);
+		paused=1;
+		while(paused) {pthread_kill(tmp->self,SIGCONT); }//printf("1");}
+		//printf("signal?\n");
 		//free(tmp);
 	}
 	else lock->locked=0;

@@ -20,7 +20,6 @@ struct mutex {
 	/* Fill this in */
 	int locked;
 	struct spinlock listsafety;
-	struct spinlock l;
 };
 void init_mutex(struct mutex *);
 void acquire_mutex(struct mutex *);
@@ -32,7 +31,7 @@ void release_mutex(struct mutex *);
  */
 struct semaphore {
 	int S;
-	struct processes *list;
+	struct spinlock listsafety;
 };
 void init_semaphore(struct semaphore *, const int);
 void wait_semaphore(struct semaphore *);

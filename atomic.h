@@ -4,7 +4,7 @@
 /**
  * Set *@value to @new if *@value was @old.
  * Return the old value of *@value
- *
+ *                     value==old?value = new:value = value;
  * *value  old  new  -->  return *value
  *      0   0    0             0   0
  *      0   0    1             0   1
