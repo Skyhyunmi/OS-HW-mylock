@@ -118,7 +118,6 @@ int dequeue_using_mutex(void)
 void init_using_mutex(void)
 {
 	init_mutex(&m);
-	//init_spinlock(&m.listsafety);
 	enqueue_fn = &enqueue_using_mutex;
 	dequeue_fn = &dequeue_using_mutex;
 }
@@ -138,7 +137,7 @@ void fini_using_mutex(void)
 /*********************************************************************
  * TODO: Implement using semaphore
  */
-struct sem *se;
+struct semaphore se;
 void enqueue_using_semaphore(int value)
 {
 	wait_semaphore(&se);
@@ -157,7 +156,7 @@ int dequeue_using_semaphore(void)
 		temp = TAILQ_FIRST(&rhead);
 		TAILQ_REMOVE(&rhead,temp,entries);
 		res=temp->val;
-		free(temp);
+		//free(temp);
 	}
 	signal_semaphore(&se);
 	return res;
@@ -220,7 +219,7 @@ void fini_ringbuffer(void)
 		fini_using_mutex();
 		break;
 	case lock_semaphore:
-		fini_using_semaphore();
+		//fini_using_semaphore();
 		break;
 	}
 }
