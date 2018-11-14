@@ -138,17 +138,34 @@ void fini_using_mutex(void)
 /*********************************************************************
  * TODO: Implement using semaphore
  */
+struct sem *se;
 void enqueue_using_semaphore(int value)
 {
+	wait_semaphore(&se);
+	temp=malloc(sizeof(struct entry));
+	temp->val=value;
+	TAILQ_INSERT_TAIL(&rhead,temp,entries);
+	signal_semaphore(&se);
 }
 
 int dequeue_using_semaphore(void)
 {
-	return 0;
+	int res=-1;
+	wait_semaphore(&se);
+	if(TAILQ_EMPTY(&rhead));
+	else{
+		temp = TAILQ_FIRST(&rhead);
+		TAILQ_REMOVE(&rhead,temp,entries);
+		res=temp->val;
+		free(temp);
+	}
+	signal_semaphore(&se);
+	return res;
 }
 
 void init_using_semaphore(int S)
 {
+	init_semaphore(&se,S);
 	enqueue_fn = &enqueue_using_semaphore;
 	dequeue_fn = &dequeue_using_semaphore;
 }
