@@ -20,6 +20,7 @@ struct mutex {
 	/* Fill this in */
 	int locked;
 	struct spinlock listsafety;
+	struct spinlock l;
 };
 void init_mutex(struct mutex *);
 void acquire_mutex(struct mutex *);

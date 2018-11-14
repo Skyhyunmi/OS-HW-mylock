@@ -109,7 +109,7 @@ int dequeue_using_mutex(void)
 		temp = TAILQ_FIRST(&rhead);
 		TAILQ_REMOVE(&rhead,temp,entries);
 		res=temp->val;
-		free(temp);
+		//free(temp);
 	}
 	release_mutex(&m);
 	return res;
@@ -118,6 +118,7 @@ int dequeue_using_mutex(void)
 void init_using_mutex(void)
 {
 	init_mutex(&m);
+	//init_spinlock(&m.listsafety);
 	enqueue_fn = &enqueue_using_mutex;
 	dequeue_fn = &dequeue_using_mutex;
 }

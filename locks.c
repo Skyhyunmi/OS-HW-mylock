@@ -20,12 +20,15 @@ void init_spinlock(struct spinlock *lock)
 
 void acquire_spinlock(struct spinlock *lock)
 {
+	//printf("acquire\n");
     while(1==compare_and_swap(&lock->locked,0,1));
+	
     return;
 }
 
 void release_spinlock(struct spinlock *lock)
 {
+	//printf("release\n");
     lock->locked=0;
     return;
 }
@@ -47,39 +50,46 @@ void init_mutex(struct mutex *lock)
 {
 	lock->locked=0;
 	init_spinlock(&lock->listsafety);
+	init_spinlock(&lock->l);
 	TAILQ_INIT(&head);
 	return;
 }
-
+int paused=0;
 void acquire_mutex(struct mutex *lock)
 {
-	signal(SIG_UNBLOCK,SIG_IGN);
+	signal(SIGCONT,SIG_DFL);
+	acquire_spinlock(&lock->listsafety);
 	if(lock->locked){
-	t=malloc(sizeof(struct entry));
-	t->self=pthread_self();
-		acquire_spinlock(&lock->listsafety);
-			TAILQ_INSERT_TAIL(&head,t,entries);
-			printf("acquire %d\n",pthread_self());
+		t=malloc(sizeof(struct entry));
+		t->self=pthread_self();
+		TAILQ_INSERT_TAIL(&head,t,entries);
 		release_spinlock(&lock->listsafety);
+		printf(" acquire paused : %d\n",paused);
 		pause();
+		printf(" acquire resumed : %d\n",paused);
 	}
-	compare_and_swap(&(lock->locked),0,1);	
+	else {
+		compare_and_swap(&(lock->locked),0,1);
+		release_spinlock(&lock->listsafety);
+	}
 }
 
 void release_mutex(struct mutex *lock)
 {
+	usleep(10000);
+	acquire_spinlock(&lock->listsafety);
 	if(!TAILQ_EMPTY(&head)){
-		acquire_spinlock(&lock->listsafety);
 		struct entry *tmp = TAILQ_FIRST(&head);
-			TAILQ_REMOVE(&head,tmp,entries);
-			printf("release %d\n",tmp->self);
-		release_spinlock(&lock->listsafety);
-		lock->locked=0;
-		pthread_kill(tmp->self,SIG_UNBLOCK);
+		TAILQ_REMOVE(&head,tmp,entries);
+		printf(" release paused : %d\n",paused);
+		acquire_spinlock(&lock->l);
+		pthread_kill(tmp->self,SIGCONT);
+		printf("signal?\n");
 		//free(tmp);
 	}
-	lock->locked=0;
-	//return;
+	else lock->locked=0;
+	release_spinlock(&lock->listsafety);
+	return;
 }
 
 
