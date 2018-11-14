@@ -62,21 +62,21 @@ int parse_command(int argc, char *argv[])
 		case '0':
 			generator_type = generator_random;
 			nr_generators = 8;
-			nr_generate = (1 << 23);
+			nr_generate = (1 << 16);
 			lock_type = lock_spinlock;
-			verbose = 0;
+			verbose = 1;
 			break;
 		case '1':
 			generator_type = generator_random;
 			nr_generators = 8;
-			nr_generate = (1 << 23);
+			nr_generate = (1 << 16);
 			lock_type = lock_mutex;
-			verbose = 0;
+			verbose = 1;
 			break;
 		case '2':
 			generator_type = generator_random;
 			nr_generators = 8;
-			nr_generate = (1 << 23);
+			nr_generate = (1 << 16);
 			lock_type = lock_semaphore;
 			verbose = 0;
 			break;

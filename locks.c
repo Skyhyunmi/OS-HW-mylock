@@ -105,6 +105,8 @@ void release_mutex(struct mutex *lock)
 void init_semaphore(struct semaphore *sem, int S)
 {
 	sem->S=S;
+	init_spinlock(&sem->listsafety);
+	TAILQ_INIT(&head);
 	return;
 }
 
@@ -122,7 +124,7 @@ void signal_semaphore(struct semaphore *sem)
 {
 	sem->S++;
 	if(sem->S<=0){
-		//signal(SIG_UNBLOCK,process);
+		
 	}
 	return;
 }

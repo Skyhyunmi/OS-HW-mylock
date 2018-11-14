@@ -109,7 +109,7 @@ int dequeue_using_mutex(void)
 		temp = TAILQ_FIRST(&rhead);
 		TAILQ_REMOVE(&rhead,temp,entries);
 		res=temp->val;
-		//free(temp);
+		free(temp);
 	}
 	release_mutex(&m);
 	return res;
@@ -125,6 +125,13 @@ void init_using_mutex(void)
 
 void fini_using_mutex(void)
 {
+	struct entry *n1 = TAILQ_FIRST(&rhead);
+	while (n1 != NULL) {
+        struct entry *n2 = TAILQ_NEXT(n1, entries);
+        free(n1);
+        n1 = n2;
+	}
+	TAILQ_INIT(&rhead);
 }
 
 
@@ -148,6 +155,13 @@ void init_using_semaphore(int S)
 
 void fini_using_semaphore(void)
 {
+	struct entry *n1 = TAILQ_FIRST(&rhead);
+	while (n1 != NULL) {
+        struct entry *n2 = TAILQ_NEXT(n1, entries);
+        free(n1);
+        n1 = n2;
+	}
+	TAILQ_INIT(&rhead);
 }
 
 
