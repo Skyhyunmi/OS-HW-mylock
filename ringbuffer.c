@@ -6,19 +6,24 @@
 #include "config.h"
 #include "locks.h"
 
-static int nr_slots = 0;
+static int nr_slots = 0;//링버퍼 사이즈
+						//개수 제한으로 가도 되고.
+						//내 맘대로 리스트 만들어도됨.
 
 static enum lock_types lock_type;
 
 void (*enqueue_fn)(int value) = NULL;
 int (*dequeue_fn)(void) = NULL;
+
 TAILQ_HEAD(ringhead,entry) rhead = TAILQ_HEAD_INITIALIZER(rhead);
 struct ringhead *rheadp;
 struct entry{
 	int val;
 	TAILQ_ENTRY(entry) entries;
 } *temp;
+int tailqsize=0;
 int cur=-1;
+
 void enqueue_ringbuffer(int value)
 {
 	assert(enqueue_fn);
@@ -44,12 +49,19 @@ int dequeue_ringbuffer(void)
  * TODO: Implement using spinlock
  */
 struct spinlock s;
+
 void enqueue_using_spinlock(int value)
 {
+	do{
+	//printf("%d\n",tailqsize);
 	acquire_spinlock(&s);
+	if(tailqsize!=nr_slots) break;
+	release_spinlock(&s);
+	}while(1);
 	temp=malloc(sizeof(struct entry));
 	temp->val=value;
 	TAILQ_INSERT_TAIL(&rhead,temp,entries);
+	tailqsize++;
 	release_spinlock(&s);
 }
 
@@ -62,6 +74,7 @@ int dequeue_using_spinlock(void)
 	}
 	temp = TAILQ_FIRST(&rhead);
 	TAILQ_REMOVE(&rhead,temp,entries);
+	tailqsize--;
 	int res=temp->val;
 	free(temp);
 	release_spinlock(&s);
@@ -93,7 +106,12 @@ void fini_using_spinlock(void)
 struct mutex m;
 void enqueue_using_mutex(int value)
 {
-	acquire_mutex(&m);
+	do{
+	//printf("%d\n",tailqsize);
+		acquire_mutex(&m);
+		if(tailqsize!=nr_slots) break;
+		release_mutex(&m);
+	}while(1);
 	temp=malloc(sizeof(struct entry));
 	temp->val=value;
 	TAILQ_INSERT_TAIL(&rhead,temp,entries);
@@ -158,7 +176,7 @@ int dequeue_using_semaphore(void)
 	temp = TAILQ_FIRST(&rhead);
 	TAILQ_REMOVE(&rhead,temp,entries);
 	int res=temp->val;
-	//free(temp);
+	free(temp);
 	signal_semaphore(&se);
 	return res;
 }
@@ -220,7 +238,7 @@ void fini_ringbuffer(void)
 		fini_using_mutex();
 		break;
 	case lock_semaphore:
-		//fini_using_semaphore();
+		fini_using_semaphore();
 		break;
 	}
 }

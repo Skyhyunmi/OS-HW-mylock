@@ -86,13 +86,13 @@ int parse_command(int argc, char *argv[])
 			nr_generators = 8;
 			nr_generate = (1 << 10);
 			counter_type = counter_delayed;
-			verbose = 0;
+			verbose = 1;
 			break;
 		case '4': /* Underflow test */
 			generator_type = generator_delayed;
 			nr_generators = 8;
 			nr_generate = (1 << 10);
-			verbose = 0;
+			verbose = 1;
 			break;
 		case 'h':
 		case '?':
