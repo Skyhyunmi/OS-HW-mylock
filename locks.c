@@ -102,7 +102,7 @@ void release_mutex(struct mutex *lock)
 void init_semaphore(struct semaphore *sem, int S)
 {
 	sem->lock=0;
-	sem->S=10;
+	sem->count=S;
 	init_spinlock(&sem->listsafety);
 	TAILQ_INIT(&head);
 	return;
@@ -110,27 +110,17 @@ void init_semaphore(struct semaphore *sem, int S)
 
 void wait_semaphore(struct semaphore *sem)
 {
-	//printf("wait\n");
 	signal(SIGUSR1,handler);
-	while(1==compare_and_swap(&(sem->lock),0,1));
 	acquire_spinlock(&sem->listsafety);
-	//printf(" wait S = %d\n",sem->S);
-	if(sem->S<=0){
+	if(sem->count<=0){
 		t=malloc(sizeof(struct entry));
 		t->self=pthread_self();
 		TAILQ_INSERT_TAIL(&head,t,entries);
-		while(0==compare_and_swap(&(sem->lock),1,0));
 		release_spinlock(&sem->listsafety);
-		printf("before pause\n");
-		sem->paused=1;
 		pause();
-		sem->paused=0;
-		printf("after pause\n");
 	}
-	else {//sem->S>0
-		sem->S--;
-		sem->lock=0;
-		//printf("S>0!\n");
+	else {
+		sem->count--;
 		release_spinlock(&sem->listsafety);
 	}
 	return;
@@ -138,25 +128,21 @@ void wait_semaphore(struct semaphore *sem)
 
 void signal_semaphore(struct semaphore *sem)
 {
-	//printf("signal\n");
+	a:
 	acquire_spinlock(&sem->listsafety);
-	while(1==compare_and_swap(&(sem->lock),0,1));
-	//printf(" signal S = %d\n",sem->S);
-	if(!TAILQ_EMPTY(&head)){
+	if(sem->count>0){
 		struct entry *tmp = TAILQ_FIRST(&head);
 		TAILQ_REMOVE(&head,tmp,entries);
-		pthread_t th = tmp->self;
-		sem->paused=1;
-		printf("after pause\n");
-		while(sem->paused) pthread_kill(tmp->self,SIGUSR1);
-		return;
+		paused=1;
+		while(paused) pthread_kill(tmp->self,SIGUSR1);
 	}
-	else{
-		sem->S++;
-	}
-	while(0==compare_and_swap(&(sem->lock),1,0));
+	else {
+		sem->count++;
+		goto a;
+		}
+	//else compare_and_swap(&(sem->lock),1,0);
+	//lock->locked=0;
 	release_spinlock(&sem->listsafety);
-	return;
 }
 
 
