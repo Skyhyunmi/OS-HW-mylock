@@ -52,10 +52,7 @@ void *counter_main(void *_args_)
 
 	for (i = 0; i < nr_requests; i++) {
 		int value = dequeue_ringbuffer();
-		if(value==-1) {
-			i--;
-			continue;
-		}
+	
 		if (verbose && i && i % 1000000 == 0) {
 			printf("%lu M / %lu M counted\n", (i >> 20), (nr_requests >> 20));
 		}

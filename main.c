@@ -32,6 +32,7 @@ int parse_command(int argc, char *argv[])
 		switch(opt) {
 		case 'v':
 			verbose = 1;
+			break;
 		case 'q':
 			verbose = 0;
 			break;
@@ -78,16 +79,16 @@ int parse_command(int argc, char *argv[])
 			nr_generators = 8;
 			nr_generate = (1 << 16);
 			lock_type = lock_semaphore;
-			verbose = 0;
+			verbose = 1;
 			break;
-		case '3':
+		case '3': /* Overflow test */
 			generator_type = generator_random;
 			nr_generators = 8;
 			nr_generate = (1 << 10);
 			counter_type = counter_delayed;
 			verbose = 0;
 			break;
-		case '4':
+		case '4': /* Underflow test */
 			generator_type = generator_delayed;
 			nr_generators = 8;
 			nr_generate = (1 << 10);

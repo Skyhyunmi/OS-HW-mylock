@@ -2,3 +2,4 @@ pa3
 *.o
 GEN*
 RESULT*
+cscope.out

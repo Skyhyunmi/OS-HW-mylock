@@ -15,7 +15,7 @@ pa3: main.o generator.o locks.o ringbuffer.o counter.o
 
 .PHONY: clean
 clean:
-	rm -rf *.o pa3 GEN* RESULT*
+	rm -rf *.o pa3 GEN* RESULT* cscope.out
 
 .PHONY: test_spinlock
 test_spinlock: clean all
@@ -40,3 +40,7 @@ test_sem: clean all
 
 .PHONY: test_all
 test_all: clean all test_spinlock test_mutex test_sem
+
+.PHONY: cscope
+cscope:
+	cscope -b -R

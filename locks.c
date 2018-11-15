@@ -107,26 +107,27 @@ void init_semaphore(struct semaphore *sem, int S)
 
 void wait_semaphore(struct semaphore *sem)
 {
-	//signal(SIGCONT,handler);
+	signal(SIGCONT,handler);
 	acquire_spinlock(&sem->listsafety);
 	sem->S--;
 	if(sem->S<0){
 		t=malloc(sizeof(struct entry));
 		t->self=pthread_self();
 		TAILQ_INSERT_TAIL(&head,t,entries);
-		//release_spinlock(&sem->listsafety);
+		release_spinlock(&sem->listsafety);
+		printf("before pause\n");
 		pause();
+		printf("after pause\n");
 	}
 	else {
-		//compare_and_swap(&(sem->S),0,1);
-		//release_spinlock(&sem->listsafety);
+		release_spinlock(&sem->listsafety);
 	}
 	return;
 }
 
 void signal_semaphore(struct semaphore *sem)
 {
-	//acquire_spinlock(&sem->listsafety);
+	acquire_spinlock(&sem->listsafety);
 	sem->S++;
 	if(sem->S<=0){
 		if(!TAILQ_EMPTY(&head)){
@@ -134,10 +135,13 @@ void signal_semaphore(struct semaphore *sem)
 			TAILQ_REMOVE(&head,tmp,entries);
 			pthread_t th = tmp->self;
 			paused=1;
+			printf("before kill\n");
 			while(paused) pthread_kill(tmp->self,SIGCONT);
+			printf("after kill\n");
+			//fflush(stdout);
 		}
 	}
-	//release_spinlock(&sem->listsafety);
+	release_spinlock(&sem->listsafety);
 	return;
 }
 

@@ -55,15 +55,15 @@ void enqueue_using_spinlock(int value)
 
 int dequeue_using_spinlock(void)
 {
-	int res=-1;
-	acquire_spinlock(&s);
-	if(TAILQ_EMPTY(&rhead)); 
-	else{
-		temp = TAILQ_FIRST(&rhead);
-		TAILQ_REMOVE(&rhead,temp,entries);
-		res=temp->val;
-		free(temp);
+	while(1) {
+		acquire_spinlock(&s);
+		if(!TAILQ_EMPTY(&rhead)) break;
+		release_spinlock(&s);
 	}
+	temp = TAILQ_FIRST(&rhead);
+	TAILQ_REMOVE(&rhead,temp,entries);
+	int res=temp->val;
+	free(temp);
 	release_spinlock(&s);
 	return res;
 }
@@ -102,15 +102,16 @@ void enqueue_using_mutex(int value)
 
 int dequeue_using_mutex(void)
 {
-	int res=-1;
-	acquire_mutex(&m);
-	if(TAILQ_EMPTY(&rhead));
-	else{
-		temp = TAILQ_FIRST(&rhead);
-		TAILQ_REMOVE(&rhead,temp,entries);
-		res=temp->val;
-		free(temp);
+	while(1) {
+		acquire_mutex(&m);
+		if(!TAILQ_EMPTY(&rhead)) break;
+		release_mutex(&m);
 	}
+	temp = TAILQ_FIRST(&rhead);
+	TAILQ_REMOVE(&rhead,temp,entries);
+	int res=temp->val;
+	free(temp);
+	
 	release_mutex(&m);
 	return res;
 }
@@ -149,22 +150,22 @@ void enqueue_using_semaphore(int value)
 
 int dequeue_using_semaphore(void)
 {
-	int res=-1;
-	wait_semaphore(&se);
-	if(TAILQ_EMPTY(&rhead));
-	else{
-		temp = TAILQ_FIRST(&rhead);
-		TAILQ_REMOVE(&rhead,temp,entries);
-		res=temp->val;
-		//free(temp);
+	while(1) {
+		wait_semaphore(&se);
+		if(!TAILQ_EMPTY(&rhead)) break;
+		signal_semaphore(&se);
 	}
+	temp = TAILQ_FIRST(&rhead);
+	TAILQ_REMOVE(&rhead,temp,entries);
+	int res=temp->val;
+	//free(temp);
 	signal_semaphore(&se);
 	return res;
 }
 
-void init_using_semaphore(int S)
+void init_using_semaphore(void)
 {
-	init_semaphore(&se,S);
+	init_semaphore(&se,10);
 	enqueue_fn = &enqueue_using_semaphore;
 	dequeue_fn = &dequeue_using_semaphore;
 }
@@ -199,7 +200,7 @@ int init_ringbuffer(const int _nr_slots_, const enum lock_types _lock_type_)
 		init_using_mutex();
 		break;
 	case lock_semaphore:
-		init_using_semaphore(10);
+		init_using_semaphore();
 		break;
 	}
 
