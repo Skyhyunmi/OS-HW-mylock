@@ -49,7 +49,7 @@ void enqueue_using_spinlock(int value)
 {
 	do{
 		acquire_spinlock(&s);
-		if(tailqsize!=nr_slots) break;
+		if(tailqsize<nr_slots) break;
 		release_spinlock(&s);
 	}while(1);
 	temp=malloc(sizeof(struct entry));
@@ -101,12 +101,13 @@ void enqueue_using_mutex(int value)
 {
 	do{
 		acquire_mutex(&m);
-		if(tailqsize!=nr_slots) break;
+		if(tailqsize<nr_slots) break;
 		release_mutex(&m);
 	}while(1);
 	temp=malloc(sizeof(struct entry));
 	temp->val=value;
 	TAILQ_INSERT_TAIL(&rhead,temp,entries);
+	tailqsize++;
 	release_mutex(&m);
 }
 
@@ -119,6 +120,7 @@ int dequeue_using_mutex(void)
 	}
 	temp = TAILQ_FIRST(&rhead);
 	TAILQ_REMOVE(&rhead,temp,entries);
+	tailqsize--;
 	int res=temp->val;
 	free(temp);
 	release_mutex(&m);
@@ -153,13 +155,14 @@ void enqueue_using_semaphore(int value)
 {
 	do{
 		wait_semaphore(&se);
-		if(tailqsize!=nr_slots) break;
+		if(tailqsize<nr_slots) break;
 		signal_semaphore(&se);
 	}while(1);
 	acquire_spinlock(&sl);
 	temp=malloc(sizeof(struct entry));
 	temp->val=value;
 	TAILQ_INSERT_TAIL(&rhead,temp,entries);
+	tailqsize++;
 	release_spinlock(&sl);
 	signal_semaphore(&se);
 }
@@ -174,6 +177,7 @@ int dequeue_using_semaphore(void)
 	acquire_spinlock(&sl);
 	temp = TAILQ_FIRST(&rhead);
 	TAILQ_REMOVE(&rhead,temp,entries);
+	tailqsize--;
 	int res=temp->val;
 	free(temp);
 	release_spinlock(&sl);
