@@ -6,10 +6,7 @@
 #include "config.h"
 #include "locks.h"
 
-static int nr_slots = 0;//링버퍼 사이즈
-						//개수 제한으로 가도 되고.
-						//내 맘대로 리스트 만들어도됨.
-
+static int nr_slots = 0;
 static enum lock_types lock_type;
 
 void (*enqueue_fn)(int value) = NULL;
@@ -22,7 +19,6 @@ struct entry{
 	TAILQ_ENTRY(entry) entries;
 } *temp;
 int tailqsize=0;
-int cur=-1;
 
 void enqueue_ringbuffer(int value)
 {
@@ -44,7 +40,6 @@ int dequeue_ringbuffer(void)
 	return value;
 }
 
-
 /*********************************************************************
  * TODO: Implement using spinlock
  */
@@ -53,10 +48,9 @@ struct spinlock s;
 void enqueue_using_spinlock(int value)
 {
 	do{
-	//printf("%d\n",tailqsize);
-	acquire_spinlock(&s);
-	if(tailqsize!=nr_slots) break;
-	release_spinlock(&s);
+		acquire_spinlock(&s);
+		if(tailqsize!=nr_slots) break;
+		release_spinlock(&s);
 	}while(1);
 	temp=malloc(sizeof(struct entry));
 	temp->val=value;
@@ -99,7 +93,6 @@ void fini_using_spinlock(void)
 	TAILQ_INIT(&rhead);
 }
 
-
 /*********************************************************************
  * TODO: Implement using mutex
  */
@@ -107,7 +100,6 @@ struct mutex m;
 void enqueue_using_mutex(int value)
 {
 	do{
-	//printf("%d\n",tailqsize);
 		acquire_mutex(&m);
 		if(tailqsize!=nr_slots) break;
 		release_mutex(&m);
@@ -129,7 +121,6 @@ int dequeue_using_mutex(void)
 	TAILQ_REMOVE(&rhead,temp,entries);
 	int res=temp->val;
 	free(temp);
-	
 	release_mutex(&m);
 	return res;
 }
@@ -157,12 +148,19 @@ void fini_using_mutex(void)
  * TODO: Implement using semaphore
  */
 struct semaphore se;
+struct spinlock sl;
 void enqueue_using_semaphore(int value)
 {
-	wait_semaphore(&se);
+	do{
+		wait_semaphore(&se);
+		if(tailqsize!=nr_slots) break;
+		signal_semaphore(&se);
+	}while(1);
+	acquire_spinlock(&sl);
 	temp=malloc(sizeof(struct entry));
 	temp->val=value;
 	TAILQ_INSERT_TAIL(&rhead,temp,entries);
+	release_spinlock(&sl);
 	signal_semaphore(&se);
 }
 
@@ -173,17 +171,20 @@ int dequeue_using_semaphore(void)
 		if(!TAILQ_EMPTY(&rhead)) break;
 		signal_semaphore(&se);
 	}
+	acquire_spinlock(&sl);
 	temp = TAILQ_FIRST(&rhead);
 	TAILQ_REMOVE(&rhead,temp,entries);
 	int res=temp->val;
 	free(temp);
+	release_spinlock(&sl);
 	signal_semaphore(&se);
 	return res;
 }
 
 void init_using_semaphore(void)
 {
-	init_semaphore(&se,10);
+	init_spinlock(&sl);
+	init_semaphore(&se,10);//10으로 설정함.
 	enqueue_fn = &enqueue_using_semaphore;
 	dequeue_fn = &dequeue_using_semaphore;
 }

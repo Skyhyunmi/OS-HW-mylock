@@ -9,6 +9,18 @@
 #include "locks.h"
 #include "atomic.h"
 
+TAILQ_HEAD(tailhead,entry) head = TAILQ_HEAD_INITIALIZER(head);
+struct tailhead *headp;
+struct entry{
+	pthread_t self;
+	TAILQ_ENTRY(entry) entries;
+}*t;
+
+int paused=1;
+void handler(int sig){
+	paused=0;
+}
+
 /******************************************************************
  * Spinlock implementation
  */
@@ -20,16 +32,12 @@ void init_spinlock(struct spinlock *lock)
 
 void acquire_spinlock(struct spinlock *lock)
 {
-	//printf("acquire\n");
     while(1==compare_and_swap(&lock->locked,0,1));
-	
     return;
 }
 
 void release_spinlock(struct spinlock *lock)
 {
-	//printf("release\n");
-    //lock->locked=0;
     while(0==compare_and_swap(&lock->locked,1,0));
 	return;
 }
@@ -40,25 +48,12 @@ void release_spinlock(struct spinlock *lock)
  *
  * Hint: Use pthread_self, pthread_kill, pause, and signal
  */
-TAILQ_HEAD(tailhead,entry) head = TAILQ_HEAD_INITIALIZER(head);
-struct tailhead *headp;
-struct entry{
-	pthread_t self;
-	TAILQ_ENTRY(entry) entries;
-}*t;
-
 void init_mutex(struct mutex *lock)
 {
 	lock->locked=0;
 	init_spinlock(&lock->listsafety);
 	TAILQ_INIT(&head);
 	return;
-}
-
-
-int paused=1;
-void handler(int sig){
-	paused=0;
 }
 
 void acquire_mutex(struct mutex *lock)
@@ -86,9 +81,9 @@ void release_mutex(struct mutex *lock)
 		TAILQ_REMOVE(&head,tmp,entries);
 		paused=1;
 		while(paused) pthread_kill(tmp->self,SIGUSR1);
+		free(tmp);
 	}
 	else compare_and_swap(&(lock->locked),1,0);
-	//lock->locked=0;
 	release_spinlock(&lock->listsafety);
 	return;
 }
@@ -101,8 +96,7 @@ void release_mutex(struct mutex *lock)
  */
 void init_semaphore(struct semaphore *sem, int S)
 {
-	sem->lock=0;
-	sem->count=S;
+	sem->count=S;//ringbuffer에서 설정함. 10으로 설정되어있음.
 	init_spinlock(&sem->listsafety);
 	TAILQ_INIT(&head);
 	return;
@@ -112,6 +106,7 @@ void wait_semaphore(struct semaphore *sem)
 {
 	signal(SIGUSR1,handler);
 	acquire_spinlock(&sem->listsafety);
+	sem->count--;
 	if(sem->count<=0){
 		t=malloc(sizeof(struct entry));
 		t->self=pthread_self();
@@ -120,29 +115,25 @@ void wait_semaphore(struct semaphore *sem)
 		pause();
 	}
 	else {
-		sem->count--;
 		release_spinlock(&sem->listsafety);
 	}
-	return;
 }
-
 void signal_semaphore(struct semaphore *sem)
 {
 	a:
 	acquire_spinlock(&sem->listsafety);
-	if(sem->count>0){
-		struct entry *tmp = TAILQ_FIRST(&head);
-		TAILQ_REMOVE(&head,tmp,entries);
-		paused=1;
-		while(paused) pthread_kill(tmp->self,SIGUSR1);
-	}
-	else {
-		sem->count++;
-		goto a;
+	sem->count++;
+	if(sem->count<=0){
+		if(!TAILQ_EMPTY(&head)){
+			struct entry *tmp = TAILQ_FIRST(&head);
+			TAILQ_REMOVE(&head,tmp,entries);
+			paused=1;
+			while(paused) pthread_kill(tmp->self,SIGUSR1);
+			free(tmp);
 		}
-	//else compare_and_swap(&(sem->lock),1,0);
-	//lock->locked=0;
+	}
 	release_spinlock(&sem->listsafety);
+	return;
 }
 
 

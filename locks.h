@@ -31,7 +31,6 @@ void release_mutex(struct mutex *);
  */
 struct semaphore {
 	int count;
-	int lock;
 	struct spinlock listsafety;
 };
 void init_semaphore(struct semaphore *, const int);

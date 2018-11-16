@@ -53,8 +53,8 @@ void *counter_main(void *_args_)
 	for (i = 0; i < nr_requests; i++) {
 		int value = dequeue_ringbuffer();
 	
-		if (verbose && i && i % 1000 == 0) {
-			printf("%lu K / %lu K counted\n", (i >> 10), (nr_requests >> 10));
+		if (verbose && i && i % 1000000 == 0) {
+			printf("%lu M / %lu M counted\n", (i >> 20), (nr_requests >> 20));
 		}
 
 		occurrances[value]++;
