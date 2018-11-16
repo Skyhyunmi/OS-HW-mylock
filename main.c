@@ -65,34 +65,34 @@ int parse_command(int argc, char *argv[])
 			nr_generators = 8;
 			nr_generate = (1 << 16);
 			lock_type = lock_spinlock;
-			verbose = 1;
+			verbose = 0;
 			break;
 		case '1':
 			generator_type = generator_random;
 			nr_generators = 8;
 			nr_generate = (1 << 16);
 			lock_type = lock_mutex;
-			verbose = 1;
+			verbose = 0;
 			break;
 		case '2':
 			generator_type = generator_random;
 			nr_generators = 8;
 			nr_generate = (1 << 16);
 			lock_type = lock_semaphore;
-			verbose = 1;
+			verbose = 0;
 			break;
 		case '3': /* Overflow test */
 			generator_type = generator_random;
 			nr_generators = 8;
 			nr_generate = (1 << 10);
 			counter_type = counter_delayed;
-			verbose = 1;
+			verbose = 0;
 			break;
 		case '4': /* Underflow test */
 			generator_type = generator_delayed;
 			nr_generators = 8;
 			nr_generate = (1 << 10);
-			verbose = 1;
+			verbose = 0;
 			break;
 		case 'h':
 		case '?':
