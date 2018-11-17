@@ -44,6 +44,9 @@ int (*assign_generator_fn(enum generator_types type, int tid))(int)
 	case generator_mixed:
 		if (tid < 4) return &generator_fn_constant;
 		return &generator_fn_random;
+	default:
+		assert(0);
+		break;
 	}
 
 	/* Unreachable */
@@ -72,13 +75,12 @@ void *generator_main(void *_args_)
 
 	for (i = 0; i < nr_generate && running; i++) {
 		value = my->generator_fn(my->tid);
-
 		enqueue_ringbuffer((int)value);
 		my->generated[value]++;
 
-		if (verbose && i && i % (1 << 20) == 0) {
-			printf("Generator %d generated %lu M / %lu M\n",
-					my->tid, (i >> 20), (nr_generate >> 20));
+		if (verbose && i && i % (1 << 10) == 0) {
+			printf("Generator %d generated %lu K / %lu K\n",
+					my->tid, (i >> 10), (nr_generate >> 10));
 		}
 	}
 	if (verbose) {
